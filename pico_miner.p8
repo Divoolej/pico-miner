@@ -22,14 +22,21 @@ local indigo = 13
 local pink   = 14
 local beige  = 15
 
+-- controls
+local left   = 0
+local right  = 1
+local up     = 2
+local down   = 3
+local action = 4
+
 -- core functions
 function _init()
- menu:init()
+	menu:init()
 end
 
 function _update()
 	if game.state == "menu" then
-	 menu:update()
+		menu:update()
 	elseif game.state == "game" then
 		game:update()
 	end
@@ -37,156 +44,214 @@ end
 
 function _draw()
 	if game.state == "menu" then
-	 menu:draw()
+		menu:draw()
 	elseif game.state == "game" then
-  game:draw()
- end
+		game:draw()
+	end
 end
 -->8
 -- main menu
 
 local options = {
- {
- 	is_selected = true,
-  text = "new run",
-  callback = function()
-   game:init()
-  end,
- },
- {
-  is_selected = false,
-  text = "exit",
-  callback = function()
-   cls()
-   stop()
-  end,
- },
+	{
+		is_selected = true,
+		text = "new run",
+		callback = function()
+			game:init()
+		end,
+	},
+	{
+		is_selected = false,
+		text = "exit",
+		callback = function()
+			cls()
+			stop()
+		end,
+	},
 }
 
+function for_selected_option(self, callback)
+	local index, option
+	for index,option in pairs(self.options) do
+		if option.is_selected then
+			callback(option, index)
+			break
+		end
+	end
+end
+
 function init_menu(self)
- game.state = "menu"
+	game.state = "menu"
 end
 
 function draw_menu(self)
- cls()
- -- draw background
- map(16, 0, 0, 0, 16, 16)
- -- draw logo
- rectfill(38, 22, 80, 30, black)
- print("pico miner", 40, 24, blue)
- -- draw options
- rectfill(38, 48, 80, 50 + #options * 8, black)
- local index, option
- for index, option in pairs(self.options) do
-  if option.is_selected then
-   print("➡️ "..option.text, 40, 43 + index * 8, green)
-  else
-   print(option.text, 52, 43 + index * 8, blue)
-  end
- end
+	cls()
+	-- draw background
+	map(16, 0, 0, 0, 16, 16)
+	-- draw logo
+	rectfill(38, 22, 80, 30, black)
+	print("pico miner", 40, 24, blue)
+	-- draw options
+	rectfill(38, 48, 80, 50 + #options * 8, black)
+	local index, option
+	for index, option in pairs(self.options) do
+		if option.is_selected then
+			print("➡️ "..option.text, 40, 43 + index * 8, green)
+		else
+			print(option.text, 52, 43 + index * 8, blue)
+		end
+	end
 end
 
 function update_menu(self)
- if btnp(4) then
-  local option
-  for option in all(self.options) do
-   if option.is_selected then
-    option.callback()
-   end
-  end
- end
- if btnp(3) then
-  local index, option
-  for index, option in pairs(self.options) do
-   if option.is_selected then
-    option.is_selected = false
-    if self.options[index + 1] then
-     self.options[index + 1].is_selected = true
-    else
-     self.options[1].is_selected = true
-    end
-    break
-   end
-  end
- elseif btnp(2) then
-  local index, option
-  for index, option in pairs(self.options) do
-   if option.is_selected then
-    option.is_selected = false
-    if self.options[index - 1] then
-     self.options[index - 1].is_selected = true
-    else
-     self.options[#self.options].is_selected = true
-    end
-    break
-   end
-  end
- end
+	if btnp(action) then
+		self:for_selected_option(function(option)
+			option.callback()
+		end)
+	end
+	if btnp(down) then
+		self:for_selected_option(function(option, index)
+			option.is_selected = false
+			self.options[index % #self.options + 1].is_selected = true
+		end)
+	elseif btnp(up) then
+		self:for_selected_option(function(option, index)
+			option.is_selected = false
+			self.options[(index - 2) % #self.options + 1].is_selected = true
+		end)
+	end
 end
 
 menu = {
- options = options,
- init = init_menu,
- draw = draw_menu,
- update = update_menu,
+	options = options,
+	for_selected_option = for_selected_option,
+	init = init_menu,
+	draw = draw_menu,
+	update = update_menu,
 }
 -->8
 -- game
 
 function init_game(self)
- self.state = "game"
+	self.state = "game"
+	player:init()
+end
+
+function can_move(self)
+	return true
+end
+
+function can_dig(self)
+ return false
 end
 
 function update_game(self)
- player:update()
+	player:update()
 end
 
 function draw_game(self)
- cls()
- -- draw background
- map(0, 0, 0, 0, 16, 9)
- -- draw player
- player:draw()
+	cls()
+	-- draw background
+	map(0, 0, 0, 0, 16, 9)
+	-- draw player
+	player:draw()
 end
 
 game = {
- init = init_game,
- update = update_game,
- draw = draw_game,
+	can_move = can_move,
+	can_dig = can_dig,
+	init = init_game,
+	update = update_game,
+	draw = draw_game,
 }
 -->8
 -- player
 
+function init_player(self)
+	self.x = self.x_grid * 8
+	self.y = self.y_grid * 8
+end
+
+function start_digging(self, direction)
+ self.state = "dig"
+end
+
+function start_moving(self, direction)
+	self.state = "move"
+end
+
+function stop_player(self)
+	self.current_frame = 1
+	self.animation_frame = 0
+	self.state = "idle"
+end
+
+function move_or_dig(self, direction)
+	if game:can_move(direction) then
+		self:start_moving(direction)
+	elseif game:can_dig(direction) then
+		self:start_digging(direction)
+	end
+end
+
+function move(self)
+	self.animation_frame += 1
+	if self.is_facing_left then
+		self.x -= 1
+	else
+		self.x += 1
+	end
+	if (self.animation_frame % 4 == 0) self.current_frame = 2
+	if (self.animation_frame % 8 == 0) self.current_frame = 1
+	if (self.animation_frame == 8) self:stop()
+end
+
+function handle_controls(self)
+	if btnp(left) then
+		self.is_facing_left = true
+		self:move_or_dig(left)
+	elseif btnp(right) then
+		self.is_facing_left = false
+		self:move_or_dig(right)
+	elseif btnp(down) then
+		self:dig(down)
+	end
+end
+
 function update_player(self)
- if btn(0) then 
-  self.x -= 1
-  self.is_facing_left = true
- end
- if btn(1) then 
-  self.x += 1
-  self.is_facing_left = false
- end
+	if (self.state == "idle") self:handle_controls()
+	if (self.state == "move") self:move()
 end
 
 function draw_player(self)
- spr(1, self.x, self.y, 1, 1, self.is_facing_left)
+	spr(self.current_frame, self.x, self.y, 1, 1, self.is_facing_left)
 end
 
 player = {
- x = 64,
- y = 56,
- is_facing_left = true,
- update = update_player,
- draw = draw_player,
+	x_grid = 8,
+	y_grid = 7,
+	current_frame = 1,
+	animation_frame = 0,
+	state = "idle",
+	is_facing_left = true,
+	start_moving = start_moving,
+	start_digging = start_digging,
+	move = move,
+	init = init_player,
+	move_or_dig = move_or_dig,
+	stop = stop_player,
+	handle_controls = handle_controls,
+	update = update_player,
+	draw = draw_player,
 }
 __gfx__
 000000000033000000330000003300000330010033333333cccccccc444444444444444f4444444444444444445444594404440144544456445444574494449a
-0000000003aa000003aa066003aa00003aa0000144444444cccccccc44444444444444444444444444444444455945954001400046264562476745764afa49af
-0000000000aa0660a0aa004600aa06600aa0000054444444cccccccc444444444d44444446444444444444444595445440104404456544244575446449a944f4
-000000000d55d0460d55da060d55d046055d001044444d44cccccccc444744444444444444444444444444444455444444004444445444444454444444944444
-00000000a0550a0600554000a0550a060550a00044444444cccccccc4444444444444444444444d444444444444459444444014444442644444467444444fa44
-000000000055400000550000005540000550040644444444ccecc3cc4444444444444464444444444444444445459544404010444542654445467544494fa944
-000000000a00a0000a00a00000a0a000a00a00464d444444cc3ccc3c4444441445444444444d44444444444495495444014004446246544476475444af4a9444
+0000000003aa000003aa000003aa06603aa0000144444444cccccccc44444444444444444444444444444444455945954001400046264562476745764afa49af
+0000000000aa066000aa0660a0aa00460aa0000054444444cccccccc444444444d44444446444444444444444595445440104404456544244575446449a944f4
+000000000d55d0460d55d0460d55da06055d001044444d44cccccccc444744444444444444444444444444444455444444004444445444444454444444944444
+00000000a0550a060a550a06005540000550a00044444444cccccccc4444444444444444444444d444444444444459444444014444442644444467444444fa44
+000000000055400000554000005500000550040644444444ccecc3cc4444444444444464444444444444444445459544404010444542654445467544494fa944
+000000000a00a00000a0a0000a00a000a00a00464d444444cc3ccc3c4444441445444444444d44444444444495495444014004446246544476475444af4a9444
 000000000200200002002000020020002002066044444444c3ccc3cc44444444444444444444444444444444495444444004444446244444476444444af44444
 44d444dc0000000000000000cccccccccccccccc4454444444544544540550540000000000000000000000000000000000000000000000000000000000000000
 4c7c4dc60200004000005000c7cccccccccccccc451515d4401505d0505555550000000000000000000000000000000000000000000000000000000000000000
@@ -196,6 +261,14 @@ __gfx__
 4d47cd440000000000005000cc7ccc7ccccccccc5115555450150550550550550ff4ff4000000000000000000000000000000000000000000000000000000000
 c74cd4440d04004004000000ccccc777cccccccc4651555446015004555555500f4ff4f000000000000000000000000000000000000000000000000000000000
 4c7444440000000000000000cccccccccccccccc4444454444055444450550451111111100000000000000000000000000000000000000000000000000000000
+00000000000000000033000000330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000003aa066003aa0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000000a0aa004600aa0660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000d55da060d55d046000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000000000000554000a0550a06000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000055000000554000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000a00a00000a0a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000200200002002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __gff__
 0000000000010103030300030303030303030303030303030000000000000000000000000303000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
