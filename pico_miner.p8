@@ -37,6 +37,19 @@ local flg_can_dig     = 2
 local flg_can_move    = 3
 local flg_can_collect = 4
 
+-- sprites
+local spr_coal = 10
+local spr_copper = 11
+local spr_iron = 12
+local spr_silver = 13
+local spr_gold = 14
+local spr_diamond = 15
+local spr_stone = 43
+local spr_stone_hit = 44
+local spr_bedrock = 45
+local spr_empty = 47
+local spr_dirt = 27
+
 -- core functions
 function _init()
 	menu:init()
@@ -63,6 +76,27 @@ end
 
 function rndi(n)
  return flr(rnd(n))
+end
+
+function ore_for_depth(n)
+ local depth_factor = flr(n / 20)
+ local dice = rnd(100)
+ if (dice < 1 + depth_factor) return spr_diamond
+ if (dice < 36) return spr_coal
+ if (dice < 40 + depth_factor) return spr_gold
+ if (dice < 70) return spr_copper
+ if (dice < 80 + depth_factor) return spr_silver
+ return spr_iron
+end
+
+function sprite_for_depth(n)
+ local depth_factor = flr(n / 10)
+ local dice = rnd(100)
+ if (dice < 2) return spr_bedrock
+ if (dice < 10 - depth_factor) return spr_empty
+ if (dice < 60 - 2 * depth_factor) return spr_dirt + rndi(4)
+ if (dice < 80 - depth_factor) return spr_stone
+ return ore_for_depth(n)
 end
 
 -->8
@@ -148,17 +182,23 @@ menu = {
 -->8
 -- game
 
-function make_tile(sprite, x, y)
+function make_tile(sprite, x, y, is_visible)
  return {
   sprite = sprite,
   x = x * 8,
   y = y * 8,
+  is_visible = is_visible,
   can_move = fget(sprite, flg_can_move),
   can_dig = fget(sprite, flg_can_dig),
   flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
   flip_v = fget(sprite, flg_flip_v) and rndi(2) == 1,
   draw = function(self)
-   spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
+   if (true) spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
+  end,
+  dig = function(self)
+   self.sprite = 47
+   self.can_move = true
+   self.can_dig = false
   end
  }
 end
@@ -169,21 +209,21 @@ function generate_map(self)
  for i=1,7 do
   self.world[i] = {}
   for j=1,16 do
-   self.world[i][j] = make_tile(26, j - 1, i - 1)
+   self.world[i][j] = make_tile(26, j - 1, i - 1, true)
   end
  end
  -- generate top ground layer and flowers
  self.world[8] = {}
  self.world[9] = {}
  for j=1,16 do
-  self.world[8][j] = make_tile(40 + rndi(3), j - 1, 7)
-  self.world[9][j] = make_tile(27 + rndi(4), j - 1, 8)
+  self.world[8][j] = make_tile(40 + rndi(3), j - 1, 7, true)
+  self.world[9][j] = make_tile(27 + rndi(4), j - 1, 8, true)
  end
  -- generate underground
  for i=10,30 do
   self.world[i] = {}
   for j=1,16 do
-   self.world[i][j] = make_tile(27 + rndi(4), j - 1, i - 1)
+   self.world[i][j] = make_tile(sprite_for_depth(i), j - 1, i - 1)
   end
  end
 end
@@ -199,7 +239,7 @@ end
 function can_move(self, direction)
  if direction == left and player.x_grid > 0 then
   return self.world[player.y_grid + 1][player.x_grid].can_move
- elseif direction == right and player.y_grid < 15 then
+ elseif direction == right and player.x_grid < 15 then
   return self.world[player.y_grid + 1][player.x_grid + 2].can_move
  else
   return false
@@ -207,15 +247,25 @@ function can_move(self, direction)
 end
 
 function can_dig(self, direction)
- if (direction == down) return true
- return false
+ if direction == left and player.x_grid > 0 then
+  return self.world[player.y_grid + 1][player.x_grid].can_dig
+ elseif direction == right and player.x_grid < 15 then
+  return self.world[player.y_grid + 1][player.x_grid + 2].can_dig
+ elseif direction == down then
+  return self.world[player.y_grid + 2][player.x_grid + 1].can_dig
+ else
+  return false
+ end
 end
 
 function has_floor(self, x, y)
  return not self.world[y + 2][x + 1].can_move
 end
 
-function process_dig(self)
+function process_dig(self, x, y, direction)
+ if (direction == left) return self.world[y + 1][x]:dig()
+ if (direction == right) return self.world[y + 1][x + 2]:dig()
+ if (direction == down) return self.world[y + 2][x + 1]:dig()
 end
 
 function update_game(self)
@@ -285,11 +335,15 @@ function move_or_dig(self)
 end
 
 function idle(self)
- if (self.animation_frame == 1) self.current_sprite = 0
+ if (self.animation_frame == 0) self.current_sprite = 0
  if (self.animation_frame == 15) self.current_sprite = 4
  if (self.animation_frame == 30) self.current_sprite = 0
  if (self.animation_frame == 45) self.current_sprite = 5
- if (self.animation_frame >= 55) self.animation_frame = 0
+ if self.animation_frame >= 55 then
+  self.animation_frame = 0
+ else
+  self.animation_frame += 1
+ end
 end
 
 function check_position(self)
@@ -316,49 +370,73 @@ function move(self)
    self.x_grid += 1
   end
   self:check_position()
+ else
+  self.animation_frame += 1
  end
 end
 
 function dig(self)
  if (self.animation_frame % 3 == 0) self.current_sprite += 1
  if self.animation_frame >= 21 then
-  self:stop()
   game:dig(self.x_grid, self.y_grid, self.direction)
+  self:check_position()
+ else
+  self.animation_frame += 1
  end
 end
 
 function fall(self)
- self.y += 2
- if (self.animation_frame <= 1) self.current_sprite = 6
- if (self.animation_frame == 3) self.current_sprite = 7
- if self.animation_frame >= 4 then
+ if (self.animation_frame == 0) self.current_sprite = 6
+ if (self.animation_frame == 2) self.current_sprite = 7
+ if self.animation_frame == 4 then
   self.y_grid += 1
   self:check_position()
+ else
+  self.y += 2
+  self.animation_frame += 1
  end
 end
 
 function handle_controls(self)
-	if btnp(left) then
+	if btn(left) then
   self.is_facing_left = true
   self.direction = left
 		self:move_or_dig()
-	elseif btnp(right) then
+	elseif btn(right) then
   self.is_facing_left = false
   self.direction = right
 		self:move_or_dig()
-	elseif btnp(down) then
+	elseif btn(down) then
   self.direction = down
 		self:move_or_dig()
 	end
 end
 
+function handle_controls_when_moving(self)
+ if btnp(left) and self.is_facing_left == false then
+  self.is_facing_left = true
+  self.direction = left
+  self.animation_frame = 15 - self.animation_frame
+  self.current_sprite = self.animation_frame / 4
+  self.x_grid += 1
+ elseif btnp(right) and self.is_facing_left == true then
+  self.is_facing_left = false
+  self.direction = right
+  self.animation_frame = 15 - self.animation_frame
+  self.current_sprite = self.animation_frame / 4
+  self.x_grid -= 1
+ end
+end
+
 function update_player(self)
- self.animation_frame += 1
 	if (self.state == "idle") then
   self:idle()
   self:handle_controls()
  end
-	if (self.state == "move") self:move()
+ if (self.state == "move") then
+  self:handle_controls_when_moving()
+  self:move()
+ end
  if (self.state == "dig") self:dig()
  if (self.state == "fall") self:fall()
 end
@@ -385,19 +463,20 @@ player = {
  check_position = check_position,
  move_or_dig = move_or_dig,
 	handle_controls = handle_controls,
+ handle_controls_when_moving = handle_controls_when_moving,
  init = init_player,
 	update = update_player,
 	draw = draw_player,
 }
 __gfx__
-00330000003300000033000000330000003300000033000000330000003300000000000000000000445444594404440144544456445444574494449a44d444dc
-03aa000003aa000003aa000003aa000003aa000003aa000003aa066003aa06600000000000000000455945954001400046264562476745764afa49af4c7c4dc6
-00aa066000aa066000aa066000aa066000aa066000aa0660a0aa004600aa004600000000000000004595445440104404456544244575446449a944f44dcd4464
-0d55d0460d55d0460d55d0460d55d0460d55d0460d55d0460d55da06ad55da060000000000000000445544444400444444544444445444444494444444d44444
-0a550a060a550a0600a50a06a0550a06a0550a0600a50a0600554000005540000000000000000000444459444444014444442644444467444444fa4444447c44
-0055400000554000005540000055400000554000005540000055000000550000000000000000000045459544404010444542654445467544494fa9444d47cd44
-0a00a00000a0a00000a0a00000a0a0000a00a0000a00a0000a00a0000a00a000000000000000000095495444014004446246544476475444af4a9444c74cd444
-02002000020020000200200002002000020020000200200002002000020020000000000000000000495444444004444446244444476444444af444444c744444
+00330000003300000033000000330000003300000033000000330000003300000000000000000000440444014454445944544456445444574494449a44d444dc
+03aa000003aa000003aa000003aa000003aa000003aa000003aa066003aa06600000000000000000400140004559459546264562476745764afa49af4c7c4dc6
+00aa066000aa066000aa066000aa066000aa066000aa0660a0aa004600aa004600000000000000004010440445954454456544244575446449a944f44dcd4464
+0d55d0460d55d0460d55d0460d55d0460d55d0460d55d0460d55da06ad55da060000000000000000440044444455444444544444445444444494444444d44444
+0a550a060a550a0600a50a06a0550a06a0550a0600a50a0600554000005540000000000000000000444401444444594444442644444467444444fa4444447c44
+0055400000554000005540000055400000554000005540000055000000550000000000000000000040401044454595444542654445467544494fa9444d47cd44
+0a00a00000a0a00000a0a00000a0a0000a00a0000a00a0000a00a0000a00a000000000000000000001400444954954446246544476475444af4a9444c74cd444
+02002000020020000200200002002000020020000200200002002000020020000000000000000000400444444954444446244444476444444af444444c744444
 00330000003300000033000000330000003306600033001003300100003300000000000000000000cccccccc4444444444444444444444444444444400000000
 03aa000003aa000003aa000003aa000003aa004603aa10013aa0000103aa00000000000007000000cccccccc444444444444444444444444444444f400000000
 00aa066000aa066000aa066000aa006000aa040600aa01600aa0000000aa00600000000000007000cccccccc4444444446444444444444444d44444400000000
@@ -414,8 +493,16 @@ __gfx__
 0000000000000000000000000000000000000000000000000000000000000000c3c8ccfcc3cecc3ccc3cc3cc5115555450150550550550550ff4ff4000005000
 0000000000000000000000000000000000000000000000000000000000000000c3cccc3cc3ccc3cccc3ccc3c4651555446015004555555500f4ff4f004000000
 00000000000000000000000000000000000000000000000000000000000000003333333333333333333333334444454444055444450550451111111100000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004404440100000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004001400000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004010440400000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004400444400000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004444014400000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004040104400000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000140044400000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000004004444400000000000000000000000000000000
 __gff__
-00000000000000000000070707070707000000000000000000030b04070707000303030303000000090909070703100b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000070707070707000000000000000000030b04070707000303030303000000090909070703100b0000000000000000000000070000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 1a1a1a1a1a1a1a1a1a1a1a1a1a1a191a0b0b0b0b0b0d0d0b0b0b0b0b0b0b0b0b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
