@@ -493,10 +493,10 @@ end
 
 player = {
 	x_grid = 8,
-	y_grid = 0,
+	y_grid = 7,
 	current_sprite = 0,
 	animation_frame = 0,
-	state = "fall",
+	state = "idle",
 	direction = left,
 	start_moving = start_moving,
 	start_digging = start_digging,
