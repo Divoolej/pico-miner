@@ -52,6 +52,21 @@ local spr_bedrock = 45
 local spr_empty = 47
 local spr_dirt = 27
 
+-- globals
+local world_depth = 300
+local min_coal_cluster_size = 5
+local max_coal_cluster_size = 9
+local min_copper_cluster_size = 4
+local max_copper_cluster_size = 8
+local min_iron_cluster_size = 4
+local max_iron_cluster_size = 7
+local min_silver_cluster_size = 3
+local max_silver_cluster_size = 6
+local min_gold_cluster_size = 2
+local max_gold_cluster_size = 5
+local min_diamond_cluster_size = 1
+local max_diamond_cluster_size = 4
+
 -- core functions
 function _init()
 	menu:init()
@@ -88,25 +103,90 @@ function rndi(n)
  return flr(rnd(n))
 end
 
-function ore_for_depth(n)
- local depth_factor = flr(n / 20)
- local dice = rnd(100)
- if (dice < 1 + depth_factor) return spr_diamond
- if (dice < 36) return spr_coal
- if (dice < 40 + depth_factor) return spr_gold
- if (dice < 70) return spr_copper
- if (dice < 80 + depth_factor) return spr_silver
- return spr_iron
+function coal_probability(y)
+ return (-1/250)*(y-100)*(y-100)+75
 end
 
-function sprite_for_depth(n)
- local depth_factor = flr(n / 10)
- local dice = rnd(100)
- if (dice < 2) return spr_bedrock
- if (dice < 10 - depth_factor) return spr_empty
- if (dice < 60 - 2 * depth_factor) return spr_dirt + rndi(4)
- if (dice < 80 - depth_factor) return spr_stone
- return ore_for_depth(n)
+function copper_probability(y)
+ return (-1/275)*(y-125)*(y-125)+75
+end
+
+function iron_probability(y)
+ return (-1/225)*(y-150)*(y-150)+80
+end
+
+function silver_probability(y)
+ return (-1/225)*(y-200)*(y-200)+90
+end
+
+function gold_probability(y)
+ return (-1/500)*(y-250)*(y-250)+75
+end
+
+function diamond_probability(y)
+ return (-1/600)*(y-300)*(y-300)+75
+end
+
+function valid_position(row, column)
+ return (
+  column >= 1 and column <= 16 and
+  row > 10 and row <= world_depth and
+  not game.world[row][column]
+ )
+end
+
+function generate_cluster(row, column, sprite, cluster_size)
+ local n = 0
+ if valid_position(row, column) then
+  game.world[row][column] = make_tile(sprite, column - 1, row - 1, true)
+  n += 1
+ end
+ local current_x_offset = rndi(3)
+ local target_x_offset = (current_x_offset - 1) % 3
+ while (current_x_offset != target_x_offset) do
+  local current_y_offset = rndi(3)
+  local target_y_offset = (current_y_offset - 1) % 3
+  while (current_y_offset != target_y_offset) do
+   if (n == cluster_size) return n
+   if valid_position(row + (current_y_offset - 1), column + (current_x_offset - 1)) then
+    n += generate_cluster(row + (current_y_offset - 1), column + (current_x_offset - 1), sprite, cluster_size - n)
+   end
+   current_y_offset = (current_y_offset + 1) % 3
+  end
+  current_x_offset = (current_x_offset + 1) % 3
+ end
+ return n
+end
+
+function check_cluster_availability(row, column, cluster_size)
+ local n = 0
+ if (valid_position(row - 1, column - 1)) n += 1
+ if (valid_position(row - 1, column)) n += 1
+ if (valid_position(row, column - 1)) n += 1
+ if (valid_position(row, column)) n += 1
+ if (valid_position(row, column + 1)) n += 1
+ if (valid_position(row + 1, column - 1)) n += 1
+ if (valid_position(row + 1, column)) n += 1
+ if (valid_position(row + 1, column + 1)) n += 1
+ return n >= cluster_size
+end
+
+function generate_resource(name, sprite, amount, probability_function, min_cluster_size, max_cluster_size)
+ game.generation_status = "generating " .. name .. "..."
+ yield()
+ local n = 0
+ while n < amount do
+  i = rndi(world_depth - 9) + 10
+  if rnd(100) < probability_function(i) then
+   j = rndi(16) + 1
+   local cluster_size = rndi(
+    max_cluster_size - min_cluster_size + 1
+   ) + min_cluster_size
+   if check_cluster_availability(i, j, cluster_size) then
+    n += generate_cluster(i, j, sprite, cluster_size)
+   end
+  end
+ end
 end
 
 -->8
@@ -213,28 +293,6 @@ function make_tile(sprite, x, y, is_visible)
  }
 end
 
-function expensive()
- local i, b
- for i=1,9999,0.1 do
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
-  b=123*23/104*108/99*34/99*87*123*23/104*108/99*34/99*87
- end
-end
-
 function generate_map(self)
  local i, j
  -- generate sky
@@ -249,22 +307,30 @@ function generate_map(self)
   local y = rndi(6) + 1
   self.world[y][x] = make_tile(spr_cloud, x - 1, y - 1, true)
  end
+ -- generate top ground layer and flowers
  game.generation_status = "generating ground layer..."
  yield()
- -- generate top ground layer and flowers
  self.world[8] = {}
  self.world[9] = {}
  for j=1,16 do
   self.world[8][j] = make_tile(40 + rndi(3), j - 1, 7, true)
   self.world[9][j] = make_tile(27 + rndi(4), j - 1, 8, true)
  end
- game.generation_status = "generating underground..."
- yield()
  -- generate underground
- for i=10,30 do
-  self.world[i] = {}
+ for i=10,world_depth do self.world[i] = {} end
+ generate_resource("coal", spr_coal, self.coal_amount, coal_probability, min_coal_cluster_size, max_coal_cluster_size)
+ generate_resource("copper", spr_copper, self.copper_amount, copper_probability, min_copper_cluster_size, max_copper_cluster_size)
+ generate_resource("iron", spr_iron, self.iron_amount, iron_probability, min_iron_cluster_size, max_iron_cluster_size)
+ generate_resource("silver", spr_silver, self.silver_amount, silver_probability, min_silver_cluster_size, max_silver_cluster_size)
+ generate_resource("gold", spr_gold, self.gold_amount, gold_probability, min_gold_cluster_size, max_gold_cluster_size)
+ generate_resource("diamonds", spr_diamond, self.diamond_amount, diamond_probability, min_diamond_cluster_size, max_diamond_cluster_size)
+ game.generation_status = "generating dirt..."
+ yield()
+ for i=10,world_depth do
   for j=1,16 do
-   self.world[i][j] = make_tile(sprite_for_depth(i), j - 1, i - 1)
+   if not self.world[i][j] then
+    self.world[i][j] = make_tile(spr_dirt + rndi(4), j - 1, i - 1)
+   end
   end
  end
 end
@@ -328,6 +394,12 @@ function draw_game(self)
 end
 
 game = {
+ coal_amount = 300,
+ copper_amount = 250,
+ iron_amount = 200,
+ silver_amount = 150,
+ gold_amount = 100,
+ diamond_amount = 50,
  world = {},
  is_loading = true,
  generate_map = generate_map,
