@@ -359,6 +359,8 @@ function can_dig(self, direction)
   return self.world[player.y_grid + 1][player.x_grid + 2].can_dig
  elseif direction == down then
   return self.world[player.y_grid + 2][player.x_grid + 1].can_dig
+ elseif direction == up then
+  return self.world[player.y_grid][player.x_grid + 1].can_dig
  else
   return false
  end
@@ -372,6 +374,7 @@ function process_dig(self, x, y, direction)
  if (direction == left) return self.world[y + 1][x]:dig()
  if (direction == right) return self.world[y + 1][x + 2]:dig()
  if (direction == down) return self.world[y + 2][x + 1]:dig()
+ if (direction == up) return self.world[y][x + 1]:dig()
 end
 
 function update_game(self)
@@ -526,6 +529,9 @@ function handle_controls(self)
 	elseif btn(down) then
   self.direction = down
 		self:move_or_dig()
+ elseif btn(up) then
+  self.direction = up
+  self:move_or_dig()
 	end
 end
 
