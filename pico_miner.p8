@@ -69,33 +69,32 @@ local max_diamond_cluster_size = 4
 
 -- core functions
 function _init()
-	menu:init()
+  menu:init()
 end
 
 function _update()
-	if game.state == "menu" then
-		menu:update()
+  if game.state == "menu" then
+    menu:update()
  elseif game.state == "generating" then
   if costatus(game.map_generation_coroutine) != "dead" then
    coresume(game.map_generation_coroutine)
   else
    game.state = "game"
   end
-	elseif game.state == "game" then
-		game:update()
-	end
+  elseif game.state == "game" then
+    game:update()
+  end
 end
 
 function _draw()
-	if game.state == "menu" then
-		menu:draw()
+  if game.state == "menu" then
+    menu:draw()
  elseif game.state == "generating" then
   game:draw_generating_status()
-	elseif game.state == "game" then
-		game:draw()
-	end
+  elseif game.state == "game" then
+    game:draw()
+  end
 end
-
 -->8
 -- helpers
 
@@ -188,86 +187,85 @@ function generate_resource(name, sprite, amount, probability_function, min_clust
   end
  end
 end
-
 -->8
 -- main menu
 
 local options = {
-	{
-		is_selected = true,
-		text = "new run",
-		callback = function()
-			game:init()
-		end,
-	},
-	{
-		is_selected = false,
-		text = "exit",
-		callback = function()
-			cls()
-			stop()
-		end,
-	},
+  {
+    is_selected = true,
+    text = "new run",
+    callback = function()
+      game:init()
+    end,
+  },
+  {
+    is_selected = false,
+    text = "exit",
+    callback = function()
+      cls()
+      stop()
+    end,
+  },
 }
 
 function for_selected_option(self, callback)
-	local index, option
-	for index,option in pairs(self.options) do
-		if option.is_selected then
-			callback(option, index)
-			break
-		end
-	end
+  local index, option
+  for index,option in pairs(self.options) do
+    if option.is_selected then
+      callback(option, index)
+      break
+    end
+  end
 end
 
 function init_menu(self)
-	game.state = "menu"
+  game.state = "menu"
 end
 
 function draw_menu(self)
-	cls()
-	-- draw background
-	map(16, 0, 0, 0, 16, 16)
-	-- draw logo
-	rectfill(38, 22, 80, 30, black)
-	print("pico miner", 40, 24, blue)
-	-- draw options
-	rectfill(38, 48, 80, 50 + #options * 8, black)
-	local index, option
-	for index, option in pairs(self.options) do
-		if option.is_selected then
-			print("➡️ "..option.text, 40, 43 + index * 8, green)
-		else
-			print(option.text, 52, 43 + index * 8, blue)
-		end
-	end
+  cls()
+  -- draw background
+  map(16, 0, 0, 0, 16, 16)
+  -- draw logo
+  rectfill(38, 22, 80, 30, black)
+  print("pico miner", 40, 24, blue)
+  -- draw options
+  rectfill(38, 48, 80, 50 + #options * 8, black)
+  local index, option
+  for index, option in pairs(self.options) do
+    if option.is_selected then
+      print("➡️ "..option.text, 40, 43 + index * 8, green)
+    else
+      print(option.text, 52, 43 + index * 8, blue)
+    end
+  end
 end
 
 function update_menu(self)
-	if btnp(action) then
-		self:for_selected_option(function(option)
-			option.callback()
-		end)
-	end
-	if btnp(down) then
-		self:for_selected_option(function(option, index)
-			option.is_selected = false
-			self.options[index % #self.options + 1].is_selected = true
-		end)
-	elseif btnp(up) then
-		self:for_selected_option(function(option, index)
-			option.is_selected = false
-			self.options[(index - 2) % #self.options + 1].is_selected = true
-		end)
-	end
+  if btnp(action) then
+    self:for_selected_option(function(option)
+      option.callback()
+    end)
+  end
+  if btnp(down) then
+    self:for_selected_option(function(option, index)
+      option.is_selected = false
+      self.options[index % #self.options + 1].is_selected = true
+    end)
+  elseif btnp(up) then
+    self:for_selected_option(function(option, index)
+      option.is_selected = false
+      self.options[(index - 2) % #self.options + 1].is_selected = true
+    end)
+  end
 end
 
 menu = {
-	options = options,
-	for_selected_option = for_selected_option,
-	init = init_menu,
-	draw = draw_menu,
-	update = update_menu,
+  options = options,
+  for_selected_option = for_selected_option,
+  init = init_menu,
+  draw = draw_menu,
+  update = update_menu,
 }
 -->8
 -- game
@@ -336,10 +334,10 @@ function generate_map(self)
 end
 
 function init_game(self)
-	self.state = "generating"
+  self.state = "generating"
  game.generation_status = "generating sky..."
  self.map_generation_coroutine = cocreate(function() self:generate_map() end)
-	player:init()
+  player:init()
 end
 
 function can_move(self, direction)
@@ -387,7 +385,7 @@ function draw_generating_status(self)
 end
 
 function draw_game(self)
-	cls()
+  cls()
  for i,row in pairs(self.world) do
   for j,column in pairs(self.world[i]) do
    self.world[i][j]:draw()
@@ -407,20 +405,20 @@ game = {
  is_loading = true,
  generate_map = generate_map,
  draw_generating_status = draw_generating_status,
-	can_move = can_move,
-	can_dig = can_dig,
+  can_move = can_move,
+  can_dig = can_dig,
  has_floor = has_floor,
  dig = process_dig,
-	init = init_game,
-	update = update_game,
-	draw = draw_game,
+  init = init_game,
+  update = update_game,
+  draw = draw_game,
 }
 -->8
 -- player
 
 function init_player(self)
-	self.x = self.x_grid * 8
-	self.y = self.y_grid * 8
+  self.x = self.x_grid * 8
+  self.y = self.y_grid * 8
  self.is_facing_left = self.direction == left
 end
 
@@ -441,18 +439,18 @@ function start_falling(self)
 end
 
 function stop_player(self)
-	self.animation_frame = 0
+  self.animation_frame = 0
  self.current_sprite = 0
-	self.state = "idle"
+  self.state = "idle"
 end
 
 function move_or_dig(self)
  self.animation_frame = 0
-	if game:can_move(self.direction) then
-		self:start_moving()
-	elseif game:can_dig(self.direction) then
-		self:start_digging()
-	end
+  if game:can_move(self.direction) then
+    self:start_moving()
+  elseif game:can_dig(self.direction) then
+    self:start_digging()
+  end
 end
 
 function idle(self)
@@ -478,12 +476,12 @@ end
 
 function move(self)
  if self.direction == left then
-		self.x -= 1
-	else
-		self.x += 1
-	end
+    self.x -= 1
+  else
+    self.x += 1
+  end
  if (self.animation_frame % 2 == 0) self.current_sprite += 1
-	if self.animation_frame >= 7 then
+  if self.animation_frame >= 7 then
   if self.direction == left then
    self.x_grid -= 1
   else
@@ -518,21 +516,21 @@ function fall(self)
 end
 
 function handle_controls(self)
-	if btn(left) then
+  if btn(left) then
   self.is_facing_left = true
   self.direction = left
-		self:move_or_dig()
-	elseif btn(right) then
+    self:move_or_dig()
+  elseif btn(right) then
   self.is_facing_left = false
   self.direction = right
-		self:move_or_dig()
-	elseif btn(down) then
+    self:move_or_dig()
+  elseif btn(down) then
   self.direction = down
-		self:move_or_dig()
+    self:move_or_dig()
  elseif btn(up) then
   self.direction = up
   self:move_or_dig()
-	end
+  end
 end
 
 function handle_controls_when_moving(self)
@@ -553,7 +551,7 @@ function handle_controls_when_moving(self)
 end
 
 function update_player(self)
-	if (self.state == "idle") then
+  if (self.state == "idle") then
   self:idle()
   self:handle_controls()
  end
@@ -566,31 +564,31 @@ function update_player(self)
 end
 
 function draw_player(self)
-	spr(self.current_sprite, self.x, self.y, 1, 1, self.is_facing_left)
+  spr(self.current_sprite, self.x, self.y, 1, 1, self.is_facing_left)
 end
 
 player = {
-	x_grid = 8,
-	y_grid = 7,
-	current_sprite = 0,
-	animation_frame = 0,
-	state = "idle",
-	direction = left,
-	start_moving = start_moving,
-	start_digging = start_digging,
+  x_grid = 8,
+  y_grid = 7,
+  current_sprite = 0,
+  animation_frame = 0,
+  state = "idle",
+  direction = left,
+  start_moving = start_moving,
+  start_digging = start_digging,
  start_falling = start_falling,
  idle = idle,
-	move = move,
+  move = move,
  dig = dig,
  fall = fall,
-	stop = stop_player,
+  stop = stop_player,
  check_position = check_position,
  move_or_dig = move_or_dig,
-	handle_controls = handle_controls,
+  handle_controls = handle_controls,
  handle_controls_when_moving = handle_controls_when_moving,
  init = init_player,
-	update = update_player,
-	draw = draw_player,
+  update = update_player,
+  draw = draw_player,
 }
 __gfx__
 00330000003300000033000000330000003300000033000000330000003300000000000000000000440444014454445944544456445444574494449a44d444dc
