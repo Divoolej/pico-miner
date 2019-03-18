@@ -2,144 +2,144 @@
 -- game
 
 function make_tile(sprite, x, y, is_visible)
- return {
-  sprite = sprite,
-  x = x * 8,
-  y = y * 8,
-  is_visible = is_visible,
-  can_move = fget(sprite, flg_can_move),
-  can_dig = fget(sprite, flg_can_dig),
-  flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
-  flip_v = fget(sprite, flg_flip_v) and rndi(2) == 1,
-  draw = function(self)
-   if (true) spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
-  end,
-  dig = function(self)
-   self.sprite = 47
-   self.can_move = true
-   self.can_dig = false
-  end
- }
+  return {
+    sprite = sprite,
+    x = x * 8,
+    y = y * 8,
+    is_visible = is_visible,
+    can_move = fget(sprite, flg_can_move),
+    can_dig = fget(sprite, flg_can_dig),
+    flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
+    flip_v = fget(sprite, flg_flip_v) and rndi(2) == 1,
+    draw = function(self)
+      if (true) spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
+    end,
+    dig = function(self)
+      self.sprite = 47
+      self.can_move = true
+      self.can_dig = false
+    end
+  }
 end
 
 function generate_map(self)
- local i, j
- -- generate sky
- for i=1,7 do
-  self.world[i] = {}
-  for j=1,16 do
-   self.world[i][j] = make_tile(spr_sky, j - 1, i - 1, true)
+  local i, j
+  -- generate sky
+  for i=1,7 do
+    self.world[i] = {}
+    for j=1,16 do
+      self.world[i][j] = make_tile(spr_sky, j - 1, i - 1, true)
+    end
   end
- end
- for i=1,16 do
-  local x = rndi(16) + 1
-  local y = rndi(6) + 1
-  self.world[y][x] = make_tile(spr_cloud, x - 1, y - 1, true)
- end
- -- generate top ground layer and flowers
- game.generation_status = "generating ground layer..."
- yield()
- self.world[8] = {}
- self.world[9] = {}
- for j=1,16 do
-  self.world[8][j] = make_tile(40 + rndi(3), j - 1, 7, true)
-  self.world[9][j] = make_tile(27 + rndi(4), j - 1, 8, true)
- end
- -- generate underground
- for i=10,world_depth do self.world[i] = {} end
- generate_resource("coal", spr_coal, self.coal_amount, coal_probability, min_coal_cluster_size, max_coal_cluster_size)
- generate_resource("copper", spr_copper, self.copper_amount, copper_probability, min_copper_cluster_size, max_copper_cluster_size)
- generate_resource("iron", spr_iron, self.iron_amount, iron_probability, min_iron_cluster_size, max_iron_cluster_size)
- generate_resource("silver", spr_silver, self.silver_amount, silver_probability, min_silver_cluster_size, max_silver_cluster_size)
- generate_resource("gold", spr_gold, self.gold_amount, gold_probability, min_gold_cluster_size, max_gold_cluster_size)
- generate_resource("diamonds", spr_diamond, self.diamond_amount, diamond_probability, min_diamond_cluster_size, max_diamond_cluster_size)
- game.generation_status = "generating dirt..."
- yield()
- for i=10,world_depth do
-  for j=1,16 do
-   if not self.world[i][j] then
-    self.world[i][j] = make_tile(spr_dirt + rndi(4), j - 1, i - 1)
-   end
+  for i=1,16 do
+    local x = rndi(16) + 1
+    local y = rndi(6) + 1
+    self.world[y][x] = make_tile(spr_cloud, x - 1, y - 1, true)
   end
- end
+  -- generate top ground layer and flowers
+  game.generation_status = "generating ground layer..."
+  yield()
+  self.world[8] = {}
+  self.world[9] = {}
+  for j=1,16 do
+    self.world[8][j] = make_tile(40 + rndi(3), j - 1, 7, true)
+    self.world[9][j] = make_tile(27 + rndi(4), j - 1, 8, true)
+  end
+  -- generate underground
+  for i=10,world_depth do self.world[i] = {} end
+  generate_resource("coal", spr_coal, self.coal_amount, coal_probability, min_coal_cluster_size, max_coal_cluster_size)
+  generate_resource("copper", spr_copper, self.copper_amount, copper_probability, min_copper_cluster_size, max_copper_cluster_size)
+  generate_resource("iron", spr_iron, self.iron_amount, iron_probability, min_iron_cluster_size, max_iron_cluster_size)
+  generate_resource("silver", spr_silver, self.silver_amount, silver_probability, min_silver_cluster_size, max_silver_cluster_size)
+  generate_resource("gold", spr_gold, self.gold_amount, gold_probability, min_gold_cluster_size, max_gold_cluster_size)
+  generate_resource("diamonds", spr_diamond, self.diamond_amount, diamond_probability, min_diamond_cluster_size, max_diamond_cluster_size)
+  game.generation_status = "generating dirt..."
+  yield()
+  for i=10,world_depth do
+    for j=1,16 do
+      if not self.world[i][j] then
+        self.world[i][j] = make_tile(spr_dirt + rndi(4), j - 1, i - 1)
+      end
+    end
+  end
 end
 
 function init_game(self)
   self.state = "generating"
- game.generation_status = "generating sky..."
- self.map_generation_coroutine = cocreate(function() self:generate_map() end)
+  game.generation_status = "generating sky..."
+  self.map_generation_coroutine = cocreate(function() self:generate_map() end)
   player:init()
 end
 
 function can_move(self, direction)
- if direction == left and player.x_grid > 0 then
-  return self.world[player.y_grid + 1][player.x_grid].can_move
- elseif direction == right and player.x_grid < 15 then
-  return self.world[player.y_grid + 1][player.x_grid + 2].can_move
- else
-  return false
- end
+  if direction == left and player.x_grid > 0 then
+    return self.world[player.y_grid + 1][player.x_grid].can_move
+  elseif direction == right and player.x_grid < 15 then
+    return self.world[player.y_grid + 1][player.x_grid + 2].can_move
+  else
+    return false
+  end
 end
 
 function can_dig(self, direction)
- if direction == left and player.x_grid > 0 then
-  return self.world[player.y_grid + 1][player.x_grid].can_dig
- elseif direction == right and player.x_grid < 15 then
-  return self.world[player.y_grid + 1][player.x_grid + 2].can_dig
- elseif direction == down then
-  return self.world[player.y_grid + 2][player.x_grid + 1].can_dig
- elseif direction == up then
-  return self.world[player.y_grid][player.x_grid + 1].can_dig
- else
-  return false
- end
+  if direction == left and player.x_grid > 0 then
+    return self.world[player.y_grid + 1][player.x_grid].can_dig
+  elseif direction == right and player.x_grid < 15 then
+    return self.world[player.y_grid + 1][player.x_grid + 2].can_dig
+  elseif direction == down then
+    return self.world[player.y_grid + 2][player.x_grid + 1].can_dig
+  elseif direction == up then
+    return self.world[player.y_grid][player.x_grid + 1].can_dig
+  else
+    return false
+  end
 end
 
 function has_floor(self, x, y)
- return not self.world[y + 2][x + 1].can_move
+  return not self.world[y + 2][x + 1].can_move
 end
 
 function process_dig(self, x, y, direction)
- if (direction == left) return self.world[y + 1][x]:dig()
- if (direction == right) return self.world[y + 1][x + 2]:dig()
- if (direction == down) return self.world[y + 2][x + 1]:dig()
- if (direction == up) return self.world[y][x + 1]:dig()
+  if (direction == left) return self.world[y + 1][x]:dig()
+  if (direction == right) return self.world[y + 1][x + 2]:dig()
+  if (direction == down) return self.world[y + 2][x + 1]:dig()
+  if (direction == up) return self.world[y][x + 1]:dig()
 end
 
 function update_game(self)
- player:update()
+  player:update()
 end
 
 function draw_generating_status(self)
- cls()
- print(game.generation_status, 20, 20, blue)
+  cls()
+  print(game.generation_status, 20, 20, blue)
 end
 
 function draw_game(self)
   cls()
- for i,row in pairs(self.world) do
-  for j,column in pairs(self.world[i]) do
-   self.world[i][j]:draw()
+  for i,row in pairs(self.world) do
+    for j,column in pairs(self.world[i]) do
+      self.world[i][j]:draw()
+    end
   end
- end
- player:draw()
+  player:draw()
 end
 
 game = {
- coal_amount = 300,
- copper_amount = 250,
- iron_amount = 200,
- silver_amount = 150,
- gold_amount = 100,
- diamond_amount = 50,
- world = {},
- is_loading = true,
- generate_map = generate_map,
- draw_generating_status = draw_generating_status,
+  coal_amount = 300,
+  copper_amount = 250,
+  iron_amount = 200,
+  silver_amount = 150,
+  gold_amount = 100,
+  diamond_amount = 50,
+  world = {},
+  is_loading = true,
+  generate_map = generate_map,
+  draw_generating_status = draw_generating_status,
   can_move = can_move,
   can_dig = can_dig,
- has_floor = has_floor,
- dig = process_dig,
+  has_floor = has_floor,
+  dig = process_dig,
   init = init_game,
   update = update_game,
   draw = draw_game,

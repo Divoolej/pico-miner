@@ -72,12 +72,12 @@ end
 function _update()
   if game.state == "menu" then
     menu:update()
- elseif game.state == "generating" then
-  if costatus(game.map_generation_coroutine) != "dead" then
-   coresume(game.map_generation_coroutine)
-  else
-   game.state = "game"
-  end
+  elseif game.state == "generating" then
+    if costatus(game.map_generation_coroutine) != "dead" then
+      coresume(game.map_generation_coroutine)
+    else
+      game.state = "game"
+    end
   elseif game.state == "game" then
     game:update()
   end
@@ -86,8 +86,8 @@ end
 function _draw()
   if game.state == "menu" then
     menu:draw()
- elseif game.state == "generating" then
-  game:draw_generating_status()
+  elseif game.state == "generating" then
+    game:draw_generating_status()
   elseif game.state == "game" then
     game:draw()
   end
