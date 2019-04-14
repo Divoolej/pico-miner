@@ -35,12 +35,12 @@ local flg_can_move    = 3
 local flg_can_collect = 4
 
 -- sprites
-local spr_coal = 10
-local spr_copper = 11
-local spr_iron = 12
-local spr_silver = 13
-local spr_gold = 14
-local spr_diamond = 15
+local spr_coal = 32
+local spr_copper = 33
+local spr_iron = 34
+local spr_silver = 36
+local spr_gold = 48
+local spr_diamond = 51
 local spr_cloud = 25
 local spr_sky = 26
 local spr_stone = 43
@@ -66,11 +66,11 @@ local max_diamond_cluster_size = 4
 
 local durability_for_sprite = {}
 durability_for_sprite[spr_coal] = 1
-durability_for_sprite[spr_copper] = 2
-durability_for_sprite[spr_iron] = 3
-durability_for_sprite[spr_silver] = 4
-durability_for_sprite[spr_gold] = 5
-durability_for_sprite[spr_diamond] = 6
+durability_for_sprite[spr_copper] = 1
+durability_for_sprite[spr_iron] = 2
+durability_for_sprite[spr_silver] = 2
+durability_for_sprite[spr_gold] = 3
+durability_for_sprite[spr_diamond] = 3
 durability_for_sprite[spr_stone] = 2
 durability_for_sprite[spr_stone_hit] = 1
 durability_for_sprite[spr_dirt] = 1

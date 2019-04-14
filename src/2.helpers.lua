@@ -37,10 +37,40 @@ function valid_position(row, column)
   )
 end
 
+function make_tile(sprite, x, y, is_visible)
+  return {
+    type = sprite,
+    frame = sprite,
+    x = x * 8,
+    y = y * 8,
+    is_visible = is_visible,
+    durability = durability_for_sprite[sprite] or 0,
+    can_move = fget(sprite, flg_can_move),
+    can_dig = fget(sprite, flg_can_dig),
+    flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
+    flip_v = fget(sprite, flg_flip_v) and rndi(2) == 1,
+    draw = function(self)
+      if (self.is_visible) spr(self.frame, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
+    end,
+    dig = function(self)
+      self.durability -= 1
+      self.frame += 1
+      if self.durability <= 0 then
+        self.type = spr_empty
+        self.frame = spr_empty
+        self.can_move = true
+        self.can_dig = false
+        self.is_visible = false -- Dirty hack to fix the first call to game:make_visible
+        game:make_visible(self.x / 8 + 1, self.y / 8 + 1)
+      end
+    end,
+  }
+end
+
 function generate_cluster(row, column, sprite, cluster_size)
   local n = 0
   if valid_position(row, column) then
-    game.world[row][column] = make_tile(sprite, column - 1, row - 1, true)
+    game.world[row][column] = make_tile(sprite, column - 1, row - 1, false)
     n += 1
   end
   local current_x_offset = rndi(3)

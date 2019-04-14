@@ -1,29 +1,19 @@
 -->8
 -- game
 
-function make_tile(sprite, x, y, is_visible)
-  return {
-    sprite = sprite,
-    x = x * 8,
-    y = y * 8,
-    is_visible = is_visible,
-    durability = durability_for_sprite[sprite] or 0,
-    can_move = fget(sprite, flg_can_move),
-    can_dig = fget(sprite, flg_can_dig),
-    flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
-    flip_v = fget(sprite, flg_flip_v) and rndi(2) == 1,
-    draw = function(self)
-      if (true) spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
-    end,
-    dig = function(self)
-      self.durability -= 1
-      if self.durability <= 0 then
-        self.sprite = 47
-        self.can_move = true
-        self.can_dig = false
+function make_visible(self, x, y)
+  local tile = self.world[y][x]
+  if tile then
+    if not tile.is_visible then
+      tile.is_visible = true
+      if tile.type == spr_empty then
+        self:make_visible(x + 1, y)
+        self:make_visible(x - 1, y)
+        self:make_visible(x, y + 1)
+        self:make_visible(x, y - 1)
       end
-    end,
-  }
+    end
+  end
 end
 
 function generate_map(self)
@@ -147,4 +137,5 @@ game = {
   init = init_game,
   update = update_game,
   draw = draw_game,
+  make_visible = make_visible,
 }
