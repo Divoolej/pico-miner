@@ -96,6 +96,10 @@ function fall(self)
     self:check_position()
   else
     self.y += 2
+    if self.y > 80 then
+      self.camera_offset += 2
+      camera(0, self.camera_offset)
+    end
     self.animation_frame += 1
   end
 end
@@ -153,6 +157,7 @@ function draw_player(self)
 end
 
 player = {
+  camera_offset = 0,
   x_grid = 8,
   y_grid = 7,
   current_sprite = 0,

@@ -7,6 +7,7 @@ function make_tile(sprite, x, y, is_visible)
     x = x * 8,
     y = y * 8,
     is_visible = is_visible,
+    durability = durability_for_sprite[sprite] or 0,
     can_move = fget(sprite, flg_can_move),
     can_dig = fget(sprite, flg_can_dig),
     flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
@@ -15,10 +16,13 @@ function make_tile(sprite, x, y, is_visible)
       if (true) spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
     end,
     dig = function(self)
-      self.sprite = 47
-      self.can_move = true
-      self.can_dig = false
-    end
+      self.durability -= 1
+      if self.durability <= 0 then
+        self.sprite = 47
+        self.can_move = true
+        self.can_dig = false
+      end
+    end,
   }
 end
 

@@ -67,6 +67,17 @@ local max_gold_cluster_size = 5
 local min_diamond_cluster_size = 1
 local max_diamond_cluster_size = 4
 
+local durability_for_sprite = {}
+durability_for_sprite[spr_coal] = 1
+durability_for_sprite[spr_copper] = 2
+durability_for_sprite[spr_iron] = 3
+durability_for_sprite[spr_silver] = 4
+durability_for_sprite[spr_gold] = 5
+durability_for_sprite[spr_diamond] = 6
+durability_for_sprite[spr_stone] = 2
+durability_for_sprite[spr_stone_hit] = 1
+durability_for_sprite[spr_dirt] = 1
+
 -- core functions
 function _init()
   menu:init()
@@ -276,6 +287,7 @@ function make_tile(sprite, x, y, is_visible)
     x = x * 8,
     y = y * 8,
     is_visible = is_visible,
+    durability = durability_for_sprite[sprite] or 0,
     can_move = fget(sprite, flg_can_move),
     can_dig = fget(sprite, flg_can_dig),
     flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
@@ -284,10 +296,13 @@ function make_tile(sprite, x, y, is_visible)
       if (true) spr(self.sprite, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
     end,
     dig = function(self)
-      self.sprite = 47
-      self.can_move = true
-      self.can_dig = false
-    end
+      self.durability -= 1
+      if self.durability <= 0 then
+        self.sprite = 47
+        self.can_move = true
+        self.can_dig = false
+      end
+    end,
   }
 end
 
@@ -511,6 +526,10 @@ function fall(self)
     self:check_position()
   else
     self.y += 2
+    if self.y > 80 then
+      self.camera_offset += 2
+      camera(0, self.camera_offset)
+    end
     self.animation_frame += 1
   end
 end
@@ -568,6 +587,7 @@ function draw_player(self)
 end
 
 player = {
+  camera_offset = 0,
   x_grid = 8,
   y_grid = 7,
   current_sprite = 0,

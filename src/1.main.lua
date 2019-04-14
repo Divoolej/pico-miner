@@ -64,6 +64,17 @@ local max_gold_cluster_size = 5
 local min_diamond_cluster_size = 1
 local max_diamond_cluster_size = 4
 
+local durability_for_sprite = {}
+durability_for_sprite[spr_coal] = 1
+durability_for_sprite[spr_copper] = 2
+durability_for_sprite[spr_iron] = 3
+durability_for_sprite[spr_silver] = 4
+durability_for_sprite[spr_gold] = 5
+durability_for_sprite[spr_diamond] = 6
+durability_for_sprite[spr_stone] = 2
+durability_for_sprite[spr_stone_hit] = 1
+durability_for_sprite[spr_dirt] = 1
+
 -- core functions
 function _init()
   menu:init()
