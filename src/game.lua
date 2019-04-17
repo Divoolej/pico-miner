@@ -100,6 +100,10 @@ function process_dig(self, x, y, direction)
   if (direction == up) return self.world[y][x + 1]:dig()
 end
 
+function finish_run(self)
+  self.state = "summary"
+end
+
 function update_game(self)
   player:update()
 end
@@ -109,14 +113,28 @@ function draw_generating_status(self)
   print(game.generation_status, 20, 20, blue)
 end
 
+function draw_summary(self)
+  cls()
+  print("run completed!", 20, 10, green)
+  print("coal: " .. (player.resources[spr_coal] or 0), 20, 20, red)
+  print("copper: " .. (player.resources[spr_copper] or 0), 20, 30, red)
+  print("iron: " .. (player.resources[spr_iron] or 0), 20, 40, red)
+  print("silver: " .. (player.resources[spr_silver] or 0), 20, 50, red)
+  print("gold: " .. (player.resources[spr_gold] or 0), 20, 60, red)
+  print("diamond: " .. (player.resources[spr_diamond] or 0), 20, 70, red)
+end
+
 function draw_game(self)
   cls()
+  camera(0, player.camera_offset)
   for i,row in pairs(self.world) do
     for j,column in pairs(self.world[i]) do
       self.world[i][j]:draw()
     end
   end
   player:draw()
+  camera(0, 0)
+  hud:draw()
 end
 
 game = {
@@ -135,7 +153,9 @@ game = {
   has_floor = has_floor,
   dig = process_dig,
   init = init_game,
+  finish_run = finish_run,
   update = update_game,
   draw = draw_game,
+  draw_summary = draw_summary,
   make_visible = make_visible,
 }

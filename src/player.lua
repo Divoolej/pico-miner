@@ -82,6 +82,8 @@ function dig(self)
   if (self.animation_frame % 2 == 0) self.current_sprite += 1
   if self.animation_frame >= 10 then
     game:dig(self.x_grid, self.y_grid, self.direction)
+    self.pickaxe -= 1
+    if (self.pickaxe <= 0) game:finish_run()
     self:check_position()
   else
     self.animation_frame += 1
@@ -98,7 +100,6 @@ function fall(self)
     self.y += 2
     if self.y > 80 then
       self.camera_offset += 2
-      camera(0, self.camera_offset)
     end
     self.animation_frame += 1
   end
@@ -139,6 +140,10 @@ function handle_controls_when_moving(self)
   end
 end
 
+function collect(self, collectible_type)
+  self.resources[collectible_type] = (self.resources[collectible_type] or 0) + 1
+end
+
 function update_player(self)
   if (self.state == "idle") then
     self:idle()
@@ -158,6 +163,9 @@ end
 
 player = {
   camera_offset = 0,
+  resources = {},
+  collect = collect,
+  pickaxe = 24,
   x_grid = 8,
   y_grid = 7,
   current_sprite = 0,

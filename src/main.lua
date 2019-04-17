@@ -99,6 +99,8 @@ function _draw()
     menu:draw()
   elseif game.state == "generating" then
     game:draw_generating_status()
+  elseif game.state == "summary" then
+    game:draw_summary()
   elseif game.state == "game" then
     game:draw()
   end

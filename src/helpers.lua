@@ -49,6 +49,7 @@ function make_tile(sprite, x, y, is_visible)
     can_dig = fget(sprite, flg_can_dig),
     flip_h = fget(sprite, flg_flip_h) and rndi(2) == 1,
     flip_v = fget(sprite, flg_flip_v) and rndi(2) == 1,
+    can_collect = fget(sprite, flg_can_collect),
     draw = function(self)
       if (self.is_visible) spr(self.frame, self.x, self.y, 1, 1, self.flip_h, self.flip_v)
     end,
@@ -56,6 +57,7 @@ function make_tile(sprite, x, y, is_visible)
       self.durability -= 1
       self.frame += 1
       if self.durability <= 0 then
+        if (self.can_collect) player:collect(self.type)
         self.type = spr_empty
         self.frame = spr_empty
         self.can_move = true
