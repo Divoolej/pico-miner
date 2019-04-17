@@ -77,6 +77,7 @@ durability_for_sprite[spr_dirt] = 1
 
 -- core functions
 function _init()
+  save.load_progress()
   menu:init()
 end
 

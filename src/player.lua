@@ -162,10 +162,13 @@ function draw_player(self)
 end
 
 player = {
+  money = 0,
+  level = 1,
   camera_offset = 0,
   resources = {},
   collect = collect,
   pickaxe = 24,
+  pickaxe_level = 1,
   x_grid = 8,
   y_grid = 7,
   current_sprite = 0,

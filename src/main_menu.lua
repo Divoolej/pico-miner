@@ -11,12 +11,20 @@ local options = {
   },
   {
     is_selected = false,
+    text = "reset",
+    callback = function()
+      save.reset_progress()
+    end
+  },
+  {
+    is_selected = false,
     text = "exit",
     callback = function()
       cls()
+      save.save_progress()
       stop()
     end,
-  },
+  }
 }
 
 function for_selected_option(self, callback)
