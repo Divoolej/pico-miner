@@ -90,6 +90,8 @@ function _update()
     else
       game.state = "game"
     end
+  elseif game.state == "summary" then
+    game:update_summary()
   elseif game.state == "game" then
     game:update()
   end

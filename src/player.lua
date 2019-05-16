@@ -2,6 +2,10 @@
 -- player
 
 function init_player(self)
+  self.x_grid = 8
+  self.y_grid = 7
+  self.pickaxe = 24 + (self.pickaxe_level - 1) * 5
+  self.camera_offset = 0
   self.x = self.x_grid * 8
   self.y = self.y_grid * 8
   self.is_facing_left = self.direction == left

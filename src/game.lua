@@ -114,14 +114,29 @@ function draw_generating_status(self)
 end
 
 function draw_summary(self)
+  local coal = (player.resources[spr_coal] or 0)
+  local copper = (player.resources[spr_copper] or 0)
+  local iron = (player.resources[spr_iron] or 0)
+  local silver = (player.resources[spr_silver] or 0)
+  local gold = (player.resources[spr_gold] or 0)
+  local diamond = (player.resources[spr_diamond] or 0)
+  local total = coal + copper * 2 + iron * 3 + silver * 4 + gold * 5 + diamond * 6
   cls()
-  print("run completed!", 20, 10, green)
-  print("coal: " .. (player.resources[spr_coal] or 0), 20, 20, red)
-  print("copper: " .. (player.resources[spr_copper] or 0), 20, 30, red)
-  print("iron: " .. (player.resources[spr_iron] or 0), 20, 40, red)
-  print("silver: " .. (player.resources[spr_silver] or 0), 20, 50, red)
-  print("gold: " .. (player.resources[spr_gold] or 0), 20, 60, red)
-  print("diamond: " .. (player.resources[spr_diamond] or 0), 20, 70, red)
+  print("run completed!", 20, 5, green)
+  print("coal: " .. coal .. " x 1 = $" .. coal, 20, 20, red)
+  print("copper: " .. copper .. " x 2 = $" .. copper, 20, 30, red)
+  print("iron: " .. iron .. " x 3 = $" .. iron, 20, 40, red)
+  print("silver: " .. silver .. " x 4 = $" .. silver, 20, 50, red)
+  print("gold: " .. gold .. " x 5 = $" .. gold, 20, 60, red)
+  print("diamond: " .. diamond .. " x 6 = $" .. diamond, 20, 70, red)
+  print("total money earned: $" .. total, 20, 85, pink)
+  player.money += total
+end
+
+function update_summary(self)
+  if btnp(action) then
+    game.state = "menu"
+  end
 end
 
 function draw_game(self)
@@ -157,5 +172,6 @@ game = {
   update = update_game,
   draw = draw_game,
   draw_summary = draw_summary,
+  update_summary = update_summary,
   make_visible = make_visible,
 }
